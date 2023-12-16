@@ -6,7 +6,13 @@ This project is aimed at automating the calculation of students' Grade Point Ave
 
 This tool now includes a powerful feature that allows users to generate a goal matrix based on the provided ICA (Internal Continuous Assessment) marks. The goal matrix provides minimum marks required for each grade, aiding students in setting realistic academic goals and optimizing their study strategies.
 
-### Before running the program, please follow these steps:
+## Running the Program
+When you run this program, it will prompt you to select one of the following options:
+
+1. Generate Goal Matrix: Requires ICA marks as input for the selected semester.
+2. Calculate SGPA and CGPA: Fast calculation that requires both ICA and TEE marks as input for the selected semester.
+
+## How to use:
 
 1. Ensure Python is installed on your computer.
 
