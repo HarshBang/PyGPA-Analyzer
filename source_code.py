@@ -1,10 +1,6 @@
-import os
 import numpy as np
 import pandas as pd
-from csv import writer 
-from datetime import datetime as dt
-
-os.chdir(r'E:\NM\Sem 3\gpa_project') # change the path with your's csv file stored dir
+import random
 
 csds_semwise_subjects = {'sem1': ['Calculus', 'Programming for Problem Solving', 'Basic Electrical and Electronics Engineering','Engineering Graphics and Design',
                                  'Elements of Biology', 'English Communication', 'Professional Ethics','Constitution of India', 'Design Thinking'],
@@ -18,8 +14,8 @@ csds_semwise_subjects = {'sem1': ['Calculus', 'Programming for Problem Solving',
                         'sem4': ['Machine learning', 'Introduction to Data, Signal, and Image Analysis', 'Statistical Methods', 'Database Management Systems', 'Web Programming',
                                  'Data handling and Visualization'],
                         
-                        'sem5': ['Software Engineering', 'Mobile Application development', 'Computer Networks', 'Operating Systems', 'Department Elective I',
-                                 'Open Elective I', 'Open Elective II'],
+                        'sem5': ['Software Engineering', 'Computer Networks', 'Operating Systems', 'Department Elective I',
+                                 'Open Elective I', 'Open Elective II', 'Mobile Application development'],
                         
                         'sem6': ['Applied Artificial Intelligence', 'Neural Networks and Deep Learning', 'Advance Data Structure for Analytics', 'Department Elective II',
                                  'Department Elective III', 'Open Elective III', 'Open Elective IV ', 'Interpersonal Skills'],
@@ -43,13 +39,13 @@ csds_sem_subs_exam_type = {'sem1': [5,4], # format: [no of subjects having term 
                         'sem2': [5,4],
                         'sem3': [6,2],
                         'sem4': [6,0],
-                        'sem5': [7,0],
+                        'sem5': [6,1],
                         'sem6': [7,1],
                         'sem7': [6,1],
                         'sem8': [0,1] 
                         } 
 
-grade_dict ={ 4:'A+', 3.75:'A', 3.5:'A-',
+grade_dict_scale_4 ={ 4:'A+', 3.75:'A', 3.5:'A-',
              3.25:'B+', 3:'B', 2.75:'B-',
              2.5:'C+', 2.25:'C', 2:'C-',
              1.5:'D', 0:'F'
@@ -58,11 +54,12 @@ grade_dict ={ 4:'A+', 3.75:'A', 3.5:'A-',
 def get_sem():
     sem_num = int(input('\nEnter Semesters: '))
     sem='sem'+str(sem_num)
+    pre_sem = 'sem'+str(sem_num-1)
     
     if sem in csds_sem_subs_exam_type:
         tee_sub_count, ica_sub_count = csds_sem_subs_exam_type[sem]
         
-    return sem, tee_sub_count, ica_sub_count 
+    return sem, pre_sem, tee_sub_count, ica_sub_count 
     
 def input_marks(sem, tee_sub_count, ica_sub_count):
     ICA , TEE = [], []
@@ -139,39 +136,6 @@ def cal_total_marks(ica_m, tee_m, tee_sub_count, ica_sub_count):
         
     return Rounded_TotalM
 
-def pass_fail(ica_m, tee_m, total_m, tee_sub_count, ica_sub_count):
-    ICA_P_F, TEE_P_F, TM_P_F, final = [], [], [], []
-    
-    for i in range(tee_sub_count, tee_sub_count+ica_sub_count):
-        tee_m[i]=22
-        ica_m[i]= ica_m[i]/2
-        
-    for i in range(0, tee_sub_count+ica_sub_count):      
-        if (ica_m[i] >= 20):
-            ICA_P_F.append('Pass')
-        elif (ica_m[i] < 20):
-            ICA_P_F.append('Fail')
-            
-    for i in range(0,tee_sub_count+ica_sub_count):  
-        if (tee_m[i] >= 20):
-            TEE_P_F.append('Pass')
-        elif (tee_m[i] < 20):
-            TEE_P_F.append('Fail')
-             
-    for i in range(0,tee_sub_count+ica_sub_count): 
-        if (total_m[i] >= 50):
-            TM_P_F.append('Pass')
-        elif (total_m[i] < 50):
-            TM_P_F.append('Fail')
-    
-    for i in range(0,tee_sub_count+ica_sub_count):
-        if (ICA_P_F[i] == 'Pass' and TEE_P_F[i]== 'Pass' and TM_P_F[i] == 'Pass'):
-            final.append('Pass')
-        else:
-            final.append('Fail') 
-    
-    return ICA_P_F, TEE_P_F, TM_P_F, final
-
 def grade_point(sub_FM, grades_scored): 
     if ( sub_FM>=85 and sub_FM<=100):
         grades_scored.append(4.00)
@@ -201,7 +165,7 @@ def cal_gpa(total_m, tee_sub_count, ica_sub_count, sem):
     for sub_FM in total_m:
         grade_point(sub_FM, grades_scored)
     
-    sub_wise_grade_scored = [grade_dict[key] for key in grades_scored]
+    sub_wise_grade_scored = [grade_dict_scale_4[key] for key in grades_scored]
     
     if sem in csds_sem_sub_credits:
         sem_sub_credits, sem_total_credits = csds_sem_sub_credits[sem][:-1], csds_sem_sub_credits[sem][-1]
@@ -216,7 +180,7 @@ def cal_gpa(total_m, tee_sub_count, ica_sub_count, sem):
     
     gpa = sum / sem_total_credits
     
-    return gpa, sub_wise_grade_scored
+    return gpa, sub_wise_grade_scored, sum
 
 def comment(GPA):
     if (GPA > 4):
@@ -230,61 +194,6 @@ def comment(GPA):
     else:
         print('--- You have to work HARDER ---')
 
-def record_data():
-    row = [current_date, current_time, sap_id, name, sem]
-    
-    for i in range(0, tee_sub_count):
-        tee_m[i]=tee_m[i]*2
-    for j in range(tee_sub_count, tee_sub_count+ica_sub_count):
-        tee_m[j]=0
-        
-    for i in range(0, tee_sub_count):
-        row.append(csds_semwise_subjects[sem][i])
-        row.append(ica_m[i])
-        row.append(ica_pass_fail[i])
-        row.append(tee_m[i])
-        row.append(tee_pass_fail[i])
-        row.append(total_m[i])
-        row.append(total_pass_fail[i])
-        row.append(sub_wise_grade_scored[i])
-        row.append(overall_pass_fail[i])
-    
-    for i in range(tee_sub_count, tee_sub_count+ica_sub_count):
-        row.append(csds_semwise_subjects[sem][i])
-        row.append(ica_m[i])
-        row.append(ica_pass_fail[i])
-        row.append(sub_wise_grade_scored[i])
-        row.append(ica_pass_fail[i]) # for overall pass fail
-    
-    row.append('SGPA: ')
-    row.append(SGPA)
-    
-    remark = 'Fail' if any(i == 'Fail' for i in overall_pass_fail) else 'Pass'    
-    row.append(remark)
-    
-    row.append('CGPA: ')
-    row.append(CGPA) 
-    
-    with open('recorded_data.csv', 'a') as f_object: #change the csv file name with yours to record data
-        writer(f_object).writerow(row)
-        f_object.close()
-        
-    print('Recorded data successfully')
-
-def display_set():
-    # Set options to display all columns and rows
-    pd.set_option('display.max_columns', None)
-    pd.set_option('display.max_rows', None)
-    pd.set_option('display.width', None)
-    pd.set_option('display.max_colwidth', None)
-    
-def display_reset():
-    # Reset display options to their defaults
-    pd.reset_option('display.max_columns')
-    pd.reset_option('display.max_rows')
-    pd.reset_option('display.width')
-    pd.reset_option('display.max_colwidth') 
-    
 def goal_matrix(sem, tee_sub_count):
     
     print(f'\nEnter ICA marks of {sem}: ')
@@ -314,17 +223,59 @@ def goal_matrix(sem, tee_sub_count):
     
     modified_tee_data = [max(0, value) for value in tee_data]   
     modified_tee_data = ['-' if value > 100 else value for value in modified_tee_data]
-    reshaped_tee_data = np.array(modified_tee_data).reshape(-1,  len(grade_dict))
+    reshaped_tee_data = np.array(modified_tee_data).reshape(-1,  len(grade_dict_scale_4))
     
     df = pd.DataFrame(reshaped_tee_data)
     df.index=csds_semwise_subjects[sem][0:tee_sub_count]
-    df.columns=grade_dict.values()
+    df.columns=grade_dict_scale_4.values()
     
     print('Goal Matrix:') 
     print('Shows the minimum marks required to get respective column grade', end='\n')  
-    display_set()
     print(df)    
-    display_reset() 
+    
+def generate_marks(difficulty):
+    if difficulty == "easy":
+        ica = random.randint(43, 50)
+        tee = random.randint(40, 50)
+    elif difficulty=="medium":
+        ica = random.randint(35, 43)
+        tee = random.randint(35, 43)
+    else:
+        ica = random.randint(25,35)
+        tee = random.randint(25,35)
+    return ica, tee
+        
+    
+def generate_plans(subjects, difficulty_levels, tee_sub_count, ica_sub_count, sem):
+    plan = []
+    icas = []
+    tees = []
+    
+    for i in range(len(subjects)):
+        ica, tee = generate_marks(difficulty_levels[i])
+        icas.append(ica)
+        tees.append(tee)
+        plan.append({
+            "subject": subjects[i],
+            "ICA": ica,
+            "TEE": tee
+        })
+        
+    total_m = cal_total_marks(icas, tees, tee_sub_count, ica_sub_count)
+    gpa, _ = cal_gpa(total_m, tee_sub_count, ica_sub_count, sem)
+    return plan, gpa
+    
+def generate_multiple_planes(subjects, target_gpa, difficulty_levels, tee_sub_count, ica_sub_count, sem, num_plans=4):
+    plans = []
+    for i in range(num_plans):
+        plan, gpa = generate_plans(subjects, difficulty_levels, tee_sub_count, ica_sub_count, sem)
+        plans.append({"plan":plan, "gpa": round(gpa,2)})
+        if gpa >= target_gpa:
+            print(f"Plan {i+1} has GPA: {gpa} (meets/exceeds target GPA: {target_gpa})")
+        else:
+            print(f"Plan {i+1} has GPA: {gpa} (below target GPA: {target_gpa})")
+    return plans
+
 
 #--main--
 print('* '*20+str(' STME PyGPA Analyzer ')+' *'*22)
@@ -332,24 +283,50 @@ print('* '*20+str(' STME PyGPA Analyzer ')+' *'*22)
 name = input('Enter Name: ')
 sap_id = int(input('Enter SAP ID: '))
 
-current_datetime = dt.today()
-current_date = current_datetime.date()
-current_time = current_datetime.time()
-
 print(f'\nWelcome, {name}')
-print('Enter 1: TEE marks recomendation -- Goal Matrix')
-print('Enter 2: Calculate GPA')
+print('Enter 1: Goal Matrix: Designs TEE preparation plans based on ICA marks')
+print('Enter 2: Target GPA Planner: Create plans tailored to your subject difficulty level')
+print('Enter 3: Calculate GPA')
+
+
 select = int(input('-> '))
 
-if select == 1:
+sem, pre_sem, tee_sub_count, ica_sub_count  = get_sem()
 
-    sem, tee_sub_count, ica_sub_count  = get_sem()
+if select == 1:
     
     goal_matrix(sem, tee_sub_count)
         
 elif select == 2:
+    subjects = csds_semwise_subjects[sem]
+    target_gpa = float(input('Enter Target GPA: '))
+    
+    difficulty_levels = []  # Store difficulty levels for each subject
+    for sub in subjects:
+        while True:
+            difficulty = input(f'Rate difficulty for {sub} (easy, medium, hard): ').lower()
+            
+            if (difficulty == "e"):
+                difficulty = "easy"
+            elif (difficulty == "m"):
+                difficulty = "medium"
+            elif (difficulty == "h"):
+                difficulty = "hard"
+            
+            if difficulty in ['easy', 'medium', 'hard']:
+                difficulty_levels.append(difficulty)
+                break
+            else:
+                print("Invalid input. Enter 'easy', 'medium', or 'hard'.")
+    
+    plans = generate_multiple_planes(subjects, target_gpa, difficulty_levels, tee_sub_count, ica_sub_count, sem)
+    
+    for idx, plan_info in enumerate(plans):
+        print(f"\nPlan {idx+1}: (GPA: {plan_info['gpa']})")
+        for subj_plan in plan_info["plan"]:
+            print(f"{subj_plan['subject']}: ICA = {subj_plan['ICA']}, TEE = {subj_plan['TEE']}")
 
-    sem, tee_sub_count, ica_sub_count = get_sem()
+elif select == 3:
     
     if sem != 'sem1':
         pre_cgpa = float(input('\nEnter current CGPA: '))
@@ -357,22 +334,12 @@ elif select == 2:
     ica_m, tee_m = input_marks(sem, tee_sub_count, ica_sub_count)
     
     total_m = cal_total_marks(ica_m, tee_m, tee_sub_count, ica_sub_count)
-        
-    ica_pass_fail , tee_pass_fail, total_pass_fail, overall_pass_fail = pass_fail(ica_m, tee_m, total_m, tee_sub_count, ica_sub_count)    
-    
-    SGPA, sub_wise_grade_scored = cal_gpa(total_m, tee_sub_count, ica_sub_count, sem)
-    SGPA = round(SGPA, 2)
-    print('\n==> SGPA:', SGPA)
+            
+    SGPA, sub_wise_grade_scored, sem_gpa_numerator = cal_gpa(total_m, tee_sub_count, ica_sub_count, sem)
+    print('\n==> SGPA:', round(SGPA, 2))
     comment(SGPA)
     
-    if sem == 'sem1':
-        pre_cgpa = SGPA
-        
-    CGPA = (pre_cgpa + SGPA) / 2
-    print('\n==> CGPA:', round(CGPA, 2))
-    
-    print('\nEnter 1: Save data')
-    print('Enter 0: Do not Save data')
-    select2 = int(input('-> '))
-    if select2 == 1:
-        record_data() 
+    if sem != 'sem1':
+            
+        new_CGPA = ((pre_cgpa*csds_sem_sub_credits[pre_sem][-1]) + (sem_gpa_numerator)) / (csds_sem_sub_credits[sem][-1] + csds_sem_sub_credits[pre_sem][-1])  
+        print('\n==> CGPA:', "{:.3f}".format(new_CGPA)[:-1])
