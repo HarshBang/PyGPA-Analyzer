@@ -177,8 +177,15 @@ def main():
     
     # Sidebar for Student Details
     st.sidebar.header("Student Information")
-    name = st.sidebar.text_input("Enter Name")
-    sap_id = st.sidebar.text_input("Enter SAP ID")
+    
+    name = st.sidebar.text_input("Enter your name")
+    sap_id = st.sidebar.text_input("Enter your SAP ID")
+    
+    # Display different messages based on screen size and input details
+    if name and sap_id:
+        st.write(f"Hello, {name}.")
+    else:
+        st.write("To proceed, please enter your student information in the sidebar.")
     
     # Validate SAP ID
     if sap_id:
