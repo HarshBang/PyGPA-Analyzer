@@ -296,7 +296,7 @@ def generate_marks(difficulty):
     return ica, tee
         
     
-def generate_plans(subjects, difficulty_levels, tee_sub_count, ica_sub_count, sem):
+def generate_plans(subjects, difficulty_levels, tee_sub_count, ica_sub_count, sem, category, grade_dict_scale, sem_sub_credits):
     plan = []
     icas = []
     tees = []
@@ -315,10 +315,10 @@ def generate_plans(subjects, difficulty_levels, tee_sub_count, ica_sub_count, se
     gpa, _, __ = cal_gpa(total_m, tee_sub_count, ica_sub_count, sem, category, grade_dict_scale, sem_sub_credits)
     return plan, gpa
     
-def generate_multiple_planes(subjects, target_gpa, difficulty_levels, tee_sub_count, ica_sub_count, sem, num_plans=4):
+def generate_multiple_planes(subjects, target_gpa, difficulty_levels, tee_sub_count, ica_sub_count, sem, category, grade_dict_scale, sem_sub_credits, num_plans=4):
     plans = []
     for i in range(num_plans):
-        plan, gpa = generate_plans(subjects, difficulty_levels, tee_sub_count, ica_sub_count, sem)
+        plan, gpa = generate_plans(subjects, difficulty_levels, tee_sub_count, ica_sub_count, sem, category=category, grade_dict_scale=grade_dict_scale, sem_sub_credits=sem_sub_credits)
         plans.append({"plan":plan, "gpa": round(gpa,2)})
         if gpa >= target_gpa:
             print(f"Plan {i+1} has GPA: {gpa} (meets/exceeds target GPA: {target_gpa})")
@@ -327,121 +327,125 @@ def generate_multiple_planes(subjects, target_gpa, difficulty_levels, tee_sub_co
     return plans
 
 #--main--
-print('* '*20+str(' STME PyGPA Analyzer ')+' *'*22)
-
-name = input('Enter Name: ')
-        
-while True:
-    try:
-        sap_id = input('Enter SAP ID: ')
-        
-        # Validate SAP ID length
-        if len(sap_id) != 11: 
-            print('Invalid input. Please enter a complete SAP ID.')
-            continue
-        
-        if not sap_id.isdigit():
-            print('Invalid input. SAP ID must contain only digits.')
-            continue
-        
-        first_digits = sap_id[:4]  # Extract the first four digits for classification
-        category, department = "", ""
-
-        if first_digits == "7057":  # CSDS department
-            if sap_id[:6] in ["705722", "705723"]:
-                category = "old"
+def run_cli_gpa_calculator():
+    print('* '*20+str(' STME PyGPA Analyzer ')+' *'*22)
+    
+    name = input('Enter Name: ')
+            
+    while True:
+        try:
+            sap_id = input('Enter SAP ID: ')
+            
+            # Validate SAP ID length
+            if len(sap_id) != 11: 
+                print('Invalid input. Please enter a complete SAP ID.')
+                continue
+            
+            if not sap_id.isdigit():
+                print('Invalid input. SAP ID must contain only digits.')
+                continue
+            
+            first_digits = sap_id[:4]  # Extract the first four digits for classification
+            category, department = "", ""
+    
+            if first_digits == "7057":  # CSDS department
+                if sap_id[:6] in ["705722", "705723"]:
+                    category = "old"
+                else:
+                    category = "new"  
+                department = "csds"
+            
+            elif first_digits == "7002":  # CE department
+                if sap_id[:6] in ["700222", "700223"]:
+                    category = "old"
+                else:
+                    category = "new"  
+                department = "ce"
+            
             else:
-                category = "new"  
-            department = "csds"
+                print('Invalid SAP ID. Enter correct SAP ID.')
+                continue
+            
+            break
         
-        elif first_digits == "7002":  # CE department
-            if sap_id[:6] in ["700222", "700223"]:
-                category = "old"
-            else:
-                category = "new"  
-            department = "ce"
+        except ValueError:
+            print('Invalid input. Please enter a correct SAP ID.')
+            
+    if (department=="csds"):
+        sem_subs_exam_type = csds_sem_subs_exam_type
+        semwise_subjects = csds_semwise_subjects
+        sem_sub_credits = csds_sem_sub_credits
         
-        else:
-            print('Invalid SAP ID. Enter correct SAP ID.')
-            continue
+    elif (department=="ce"):
+        sem_subs_exam_type = ce_sem_subs_exam_type
+        semwise_subjects = ce_semwise_subjects
+        sem_sub_credits = csds_sem_sub_credits
         
-        break
-    
-    except ValueError:
-        print('Invalid input. Please enter a correct SAP ID.')
+    if(category=="old"):
+        low_marks = [85, 81, 77, 73, 69, 65, 61, 57, 50, 40, 0]
+        grade_dict_scale = grade_dict_scale_4
         
-if (department=="csds"):
-    sem_subs_exam_type = csds_sem_subs_exam_type
-    semwise_subjects = csds_semwise_subjects
-    sem_sub_credits = csds_sem_sub_credits
+    elif(category=="new"):
+        low_marks = [90, 80, 70, 60, 55, 50, 40, 0]
+        grade_dict_scale = grade_dict_scale_10
+        
+    print(f'\nWelcome, {name}')
+    print('Enter 1: Goal Matrix: Designs TEE preparation plans based on ICA marks')
+    print('Enter 2: Target GPA Planner: Create plans tailored to your subject difficulty level (Beta Version)')
+    print('Enter 3: Calculate GPA')
     
-elif (department=="ce"):
-    sem_subs_exam_type = ce_sem_subs_exam_type
-    semwise_subjects = ce_semwise_subjects
-    sem_sub_credits = csds_sem_sub_credits
     
-if(category=="old"):
-    low_marks = [85, 81, 77, 73, 69, 65, 61, 57, 50, 40, 0]
-    grade_dict_scale = grade_dict_scale_4
+    select = int(input('-> '))
     
-elif(category=="new"):
-    low_marks = [90, 80, 70, 60, 55, 50, 40, 0]
-    grade_dict_scale = grade_dict_scale_10
+    sem, pre_sem, tee_sub_count, ica_sub_count  = get_sem(sem_subs_exam_type)
     
-print(f'\nWelcome, {name}')
-print('Enter 1: Goal Matrix: Designs TEE preparation plans based on ICA marks')
-print('Enter 2: Target GPA Planner: Create plans tailored to your subject difficulty level (Beta Version)')
-print('Enter 3: Calculate GPA')
-
-
-select = int(input('-> '))
-
-sem, pre_sem, tee_sub_count, ica_sub_count  = get_sem(sem_subs_exam_type)
-
-if select == 1:
-    goal_matrix(sem, tee_sub_count, semwise_subjects, low_marks, grade_dict_scale)
-
-elif select == 2:
-    subjects = semwise_subjects[sem]
-    target_gpa = float(input('Enter Target GPA: '))
+    if select == 1:
+        goal_matrix(sem, tee_sub_count, semwise_subjects, low_marks, grade_dict_scale)
     
-    difficulty_levels = []  # Store difficulty levels for each subject
-    for sub in subjects:
-        while True:
-            difficulty = input(f'Rate difficulty for {sub} (easy, medium, hard): ').lower()
-            
-            if (difficulty == "e"):
-                difficulty = "easy"
-            elif (difficulty == "m"):
-                difficulty = "medium"
-            elif (difficulty == "h"):
-                difficulty = "hard"
-            
-            if difficulty in ['easy', 'medium', 'hard']:
-                difficulty_levels.append(difficulty)
-                break
-            else:
-                print("Invalid input. Enter 'easy', 'medium', 'hard' or 'e', 'm', 'h'.")
+    elif select == 2:
+        subjects = semwise_subjects[sem]
+        target_gpa = float(input('Enter Target GPA: '))
+        
+        difficulty_levels = []  # Store difficulty levels for each subject
+        for sub in subjects:
+            while True:
+                difficulty = input(f'Rate difficulty for {sub} (easy, medium, hard): ').lower()
+                
+                if (difficulty == "e"):
+                    difficulty = "easy"
+                elif (difficulty == "m"):
+                    difficulty = "medium"
+                elif (difficulty == "h"):
+                    difficulty = "hard"
+                
+                if difficulty in ['easy', 'medium', 'hard']:
+                    difficulty_levels.append(difficulty)
+                    break
+                else:
+                    print("Invalid input. Enter 'easy', 'medium', 'hard' or 'e', 'm', 'h'.")
+        
+        plans = generate_multiple_planes(subjects, target_gpa, difficulty_levels, tee_sub_count, ica_sub_count, sem, category, grade_dict_scale, sem_sub_credits)
+        
+        for idx, plan_info in enumerate(plans):
+            print(f"\nPlan {idx+1}: (GPA: {plan_info['gpa']})")
+            for subj_plan in plan_info["plan"]:
+                print(f"{subj_plan['subject']}: ICA = {subj_plan['ICA']}, TEE = {subj_plan['TEE']}")
+                
+    elif select == 3:
+        if sem != 'sem1':
+            pre_cgpa = float(input('\nEnter CGPA: '))
     
-    plans = generate_multiple_planes(subjects, target_gpa, difficulty_levels, tee_sub_count, ica_sub_count, sem)
+        ica_m, tee_m = input_marks(sem, tee_sub_count, ica_sub_count, semwise_subjects)
+        
+        total_m = cal_total_marks(ica_m, tee_m, tee_sub_count, ica_sub_count)
+                
+        SGPA, sub_wise_grade_scored, sem_gpa_numerator = cal_gpa(total_m, tee_sub_count, ica_sub_count, sem, category, grade_dict_scale, sem_sub_credits)
+        print('\n==> SGPA:', round(SGPA, 2))
+        
+        if sem != 'sem1':
+                
+            new_CGPA = ((pre_cgpa* sem_sub_credits[pre_sem][-1]) + (sem_gpa_numerator)) / (sem_sub_credits[sem][-1] + sem_sub_credits[pre_sem][-1])  
+            print('\n==> CGPA:', "{:.3f}".format(new_CGPA)[:-1])
     
-    for idx, plan_info in enumerate(plans):
-        print(f"\nPlan {idx+1}: (GPA: {plan_info['gpa']})")
-        for subj_plan in plan_info["plan"]:
-            print(f"{subj_plan['subject']}: ICA = {subj_plan['ICA']}, TEE = {subj_plan['TEE']}")
-            
-elif select == 3:
-    if sem != 'sem1':
-        pre_cgpa = float(input('\nEnter CGPA: '))
-
-    ica_m, tee_m = input_marks(sem, tee_sub_count, ica_sub_count, semwise_subjects)
-    
-    total_m = cal_total_marks(ica_m, tee_m, tee_sub_count, ica_sub_count)
-            
-    SGPA, sub_wise_grade_scored, sem_gpa_numerator = cal_gpa(total_m, tee_sub_count, ica_sub_count, sem, category, grade_dict_scale, sem_sub_credits)
-    print('\n==> SGPA:', round(SGPA, 2))
-    
-    if sem != 'sem1':
-            
-        new_CGPA = ((pre_cgpa* sem_sub_credits[pre_sem][-1]) + (sem_gpa_numerator)) / (sem_sub_credits[sem][-1] + sem_sub_credits[pre_sem][-1])  
-        print('\n==> CGPA:', "{:.3f}".format(new_CGPA)[:-1])
+if __name__ == "__main__":
+    run_cli_gpa_calculator()
