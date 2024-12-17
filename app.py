@@ -173,7 +173,7 @@ def add_sidebar_footer():
 
 def main():
     st.title("STME HYD PyGPA Analyzer")
-    st.sidebar.image('logo.svg', use_column_width=True)
+    st.sidebar.image('logo.svg', use_container_width=True)
     
     # Sidebar for Student Details
     st.sidebar.header("Student Information")
