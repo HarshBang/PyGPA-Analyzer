@@ -266,18 +266,24 @@ def main():
         elif feature == "Calculate GPA":
             st.header("GPA Calculator")
     
-            # Handling first semester differently
+            # Collect previous semester SGPAs for CGPA calculation
+            previous_sgpas = []
             if sem_num > 1:
-                if category == "old":
-                    # Limit input to 4.0 for old category
-                    prev_cgpa = st.number_input("Enter Current CGPA", 
-                                                min_value=0.0, max_value=4.0, value=0.0, step=0.1,
-                                                help="For old grading system, CGPA is on a 4.0 scale")
-                else:
-                    # Allow up to 10.0 for new category
-                    prev_cgpa = st.number_input("Enter Previous CGPA", 
-                                                min_value=0.0, max_value=10.0, value=0.0, step=0.1,
-                                                help="For new grading system, CGPA is on a 10.0 scale")
+                st.subheader("Previous Semester SGPAs")
+                st.write("Enter SGPA for each previous semester:")
+                
+                for prev_sem_num in range(1, sem_num):
+                    if category == "old":
+                        sgpa = st.number_input(f"SGPA for Semester {prev_sem_num}", 
+                                             min_value=0.0, max_value=4.0, value=0.0, step=0.01,
+                                             help="For old grading system, SGPA is on a 4.0 scale",
+                                             key=f"sgpa_sem_{prev_sem_num}")
+                    else:
+                        sgpa = st.number_input(f"SGPA for Semester {prev_sem_num}", 
+                                             min_value=0.0, max_value=10.0, value=0.0, step=0.01,
+                                             help="For new grading system, SGPA is on a 10.0 scale",
+                                             key=f"sgpa_sem_{prev_sem_num}")
+                    previous_sgpas.append(sgpa)
             
             # Marks input
             st.subheader("Note: Enter ICA Marks out of 50 and TEE Marks out of 100")
@@ -341,13 +347,26 @@ def main():
                 
                 # CGPA calculation for semesters after first
                 if sem_num > 1:
-                    prev_sem = f'sem{sem_num - 1}'
-                    prev_sem_credits = sem_sub_credits[prev_sem][-1]
+                    # Calculate CGPA using all previous SGPAs
+                    total_numerator = 0
+                    total_denominator = 0
+                    
+                    # Add previous semesters' contribution
+                    for prev_sem_num, prev_sgpa in enumerate(previous_sgpas, 1):
+                        prev_sem_key = f'sem{prev_sem_num}'
+                        prev_sem_credits = sem_sub_credits[prev_sem_key][-1]
+                        total_numerator += prev_sgpa * prev_sem_credits
+                        total_denominator += prev_sem_credits
+                    
+                    # Add current semester's contribution
                     current_sem_credits = sem_sub_credits[sem][-1]
-    
-                    new_cgpa = ((prev_cgpa * prev_sem_credits) + sem_gpa_numerator) / (current_sem_credits + prev_sem_credits)
-    
-                    st.success(f"Cumulative GPA: {new_cgpa:.2f}")
+                    total_numerator += sgpa * current_sem_credits
+                    total_denominator += current_sem_credits
+                    
+                    # Calculate CGPA
+                    cgpa = total_numerator / total_denominator
+                    
+                    st.success(f"Cumulative GPA: {cgpa:.2f}")
                
     add_sidebar_footer()
                 
